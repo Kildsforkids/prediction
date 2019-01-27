@@ -1,2 +1,2 @@
 # prediction
-Program tha will help to diagnose diseases
+Program that will help to diagnose diseases
