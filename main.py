@@ -62,27 +62,31 @@ def cosineSimilarity(a, b):
     sumb2=sum([b[nb]*b[nb] for nb in b.keys()])
     return sumab/math.sqrt(suma2*sumb2)
 
-quoteDictionaries = []
-for i in range(0, len(quotes)):
-    print("Создание частотного словаря: " + str(i) + "/" + str(len(quotes)), end='\r')
-    newDict = getArticleDictionary(quotes[i])
-    quoteDictionaries.append(newDict)
-print()
-
-similarities = []
-for i in range(0, len(quotes)):
-    print("Нахождение расстояния: " + str(i) + "/" + str(len(quotes)), end='\r')
-    similarities.append(cosineSimilarity(quoteDictionaries[0], quoteDictionaries[i]))
-print()
-
-print("Создание списка...")
-print()
-simList = list(zip(similarities, quotes))
-simList.sort(key=lambda x: x[0], reverse=True)
-
-for i in range(len(simList)):
-    print(str(simList[i][0]))
-    print("==========")
-    print(simList[i][1])
-    print("==========")
+def compare_texts(texts):
+    quoteDictionaries = []
+    for i in range(0, len(texts)):
+        print("Создание частотного словаря: " + str(i) + "/" + str(len(texts)), end='\r')
+        newDict = getArticleDictionary(texts[i])
+        quoteDictionaries.append(newDict)
     print()
+
+    similarities = []
+    for i in range(0, len(texts)):
+        print("Нахождение расстояния: " + str(i) + "/" + str(len(texts)), end='\r')
+        similarities.append(cosineSimilarity(quoteDictionaries[0], quoteDictionaries[i]))
+    print()
+
+    print("Создание списка...")
+    print()
+    simList = list(zip(similarities, texts))
+    simList.sort(key=lambda x: x[0], reverse=True)
+
+    for i in range(len(simList)):
+        print(str(simList[i][0]))
+        print("==========")
+        print(simList[i][1])
+        print("==========")
+        print()
+
+compare_texts(quotes)
+compare_texts(quotes2)
