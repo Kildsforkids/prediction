@@ -8,7 +8,13 @@ from collections import Counter
 import math
 import operator
 
+import sys
+# Импортируем наш интерфейс из файла
+from med import *
+from PyQt5 import QtCore, QtGui, QtWidgets
+
 quotes = [
+    "",
     " появились и стали нарастать боли в верхних отделах живота, тошнота. Самостоятельно принимала активированный уголь. Боли постепенно усиливались, ",
     "Считает себя больной с 13.05.16г., когда отметила появление болей в верхних отделах живота. Присоединилась тошнота. Принимала Но-шпу без эффекта.  в связи с ухудшением состояния вызвала СМП",
     "Со слов больной за 3 часа до поступления отметила поступления отметила появление болей в животе. Самостоятельно не лечилась. В связи с нарастанием болей вызвала БСМП, доставлена в 13 ГКБ.",
@@ -88,5 +94,28 @@ def compare_texts(texts):
         print("==========")
         print()
 
-compare_texts(quotes)
-compare_texts(quotes2)
+class MyWin(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
+        # Здесь прописываем событие нажатия на кнопку
+        self.ui.pushButton.clicked.connect(self.MyFunction)
+
+    # Пока пустая функция которая выполняется
+    # при нажатии на кнопку
+    def MyFunction(self):
+        self.ui.textEdit_2.setText("")
+        strings = self.ui.textEdit.toPlainText()
+        # arr = strings.split('\n')
+        result = ''
+        quotes[0] = strings
+        result = compare_texts(quotes)
+        self.ui.textEdit_2.setText(result)
+
+if __name__=="__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    myapp = MyWin()
+    myapp.show()
+    sys.exit(app.exec_())
