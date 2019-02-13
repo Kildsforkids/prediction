@@ -1,0 +1,44 @@
+[
+  {
+    "sex": "F",
+    "age": 53,
+    "stomach": ["Soft", true],
+    "temperature": false,
+    "diagnose": "OKX"
+  },
+  {
+    "sex": "F",
+    "age": 54,
+    "stomach": ["Soft", true],
+    "temperature": false,
+    "diagnose": "OKX"
+  },
+  {
+    "sex": "F",
+    "age": 34,
+    "stomach": ["Soft", true],
+    "temperature": false,
+    "diagnose": "OKX"
+  },
+  {
+    "sex": "M",
+    "age": 66,
+    "stomach": ["Soft", true],
+    "temperature": false,
+    "diagnose": "OKX"
+  },
+  {
+    "sex": "F",
+    "age": 51,
+    "stomach": ["Soft", true],
+    "temperature": false,
+    "diagnose": "OKX"
+  },
+  {
+    "sex": "M",
+    "age": 56,
+    "stomach": ["Soft", true],
+    "temperature": false,
+    "diagnose": "ODX"
+  }
+]
