@@ -1,6 +1,6 @@
 import sys
 # Импортируем наш интерфейс из файла
-from test import *
+from test2 import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class MyWin(QtWidgets.QMainWindow):
