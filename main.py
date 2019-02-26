@@ -5,10 +5,24 @@ from mysql.connector import errorcode
 
 # Функция записи выбранного значения
 def remember():
+    if len(lbox.curselection()) > 0:
+        last_selected = fields[lbox.curselection()[0]]
     if len(last_selected) > 0:
         if last_selected['widget'] == 'spinbox':
             check.update({last_selected['atr']:spin1.get()})
+        elif last_selected['widget'] == 'option':
+            check.update({last_selected['atr']:option_value})
     print(check)
+    weigh()
+
+
+def get_option(value):
+    print(value)
+    if value == 'Мужской':
+        option_value = 'M'
+    elif value == 'Женский':
+        option_value = 'F'
+    print(option_value)
 
 # Функция выбора элемента из ListBox'a
 def select(event):
@@ -39,15 +53,19 @@ def weigh():
                 k += 1
         hd = history['diagnose']
         w = weights[hd]
-        weights.update({hd:k if k > w else w})
+        if k > 0:
+            w[1] += 1
+        w[0] = k if k > w[0] else w[0]
+        # weights.update({hd:[k if k > w[0] else w[0], w[1]})
     print(weights)
 
 
+option_value = ""
 last_selected = {}                      # Последний выбранный атрибут
 data = []                               # Массив словарей для работы с локальным хранилищем
-atr = ['id', 'sex', 'age', 'diagnose']  # Список атрибутов
+atr = []  # Список атрибутов
 check = {}                              # Список атрибутов, по которым производится сравнение
-weights = {'P':0, 'X':0}                # Список болезнь - "вес"
+weights = {'P':[0,0], 'X':[0,0]}        # Список болезнь - "вес" (максимальное число совпавших атрибутов, кол-во таких историй)
 # lbox_data = ['Пол', 'Возраст']
 fields = [                              # Поля в ListBox'e
     {'field':'Пол', 'atr':'sex', 'widget':'option', 'values':['Мужской','Женский']},
@@ -68,17 +86,19 @@ else:
     print("You are connected!")
     cursor = connection.cursor()
     was_connected = True
+# Если поключились, то выгрузить данные из БД в локальное хранилище
 if was_connected:
     cursor.execute("select * from directory;")
-    for i in cursor:
+    atr = [i[0] for i in cursor.description]
+    for row in cursor:
         data.append({})
         k = 0
-        for j in i:
-            if j is not None:
-                if k > len(atr):
-                    data[len(data)-1].update({atr[3]:j})
-                else:
-                    data[len(data)-1].update({atr[k]:j})
+        for col in row:
+            if col is not None:
+                # if k > len(atr):
+                #     data[len(data)-1].update({atr[3]:col})
+                # else:
+                data[len(data)-1].update({atr[k]:col})
             k += 1
     with open("local_db.json", "w") as write_file:
         json.dump(data, write_file)
@@ -86,7 +106,7 @@ if was_connected:
     connection.close()
 
 root = Tk()
-root.title('Мед-Анализатор')
+root.title('Мед-Анализатор 3000')
 root.geometry('500x300')
 
 leb1=Label(root,text='Статические данные')
@@ -104,7 +124,7 @@ scrollbar.config(command=lbox.yview)
 scrollbar.pack(side="right", fill="y")
 
 s1 = StringVar(value='Мужской')
-option1 = OptionMenu(root, s1, 'Мужской', 'Женский')
+option1 = OptionMenu(root, s1, 'Мужской', 'Женский', command=get_option)
 spin1 = Spinbox(root, from_=0, to=10, width=5)
 
 btn = Button(root, text="Запомнить", command=remember)
