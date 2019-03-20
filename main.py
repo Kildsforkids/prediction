@@ -4,6 +4,8 @@ from tkinter import Tk, Frame, Listbox, Scrollbar, Toplevel, Message, \
 import json
 import mysql.connector
 from mysql.connector import errorcode
+import translations
+# import time
 
 
 # Функция соединения с БД
@@ -32,8 +34,6 @@ def connect(host, user, password, database, port):
 
 # Функция записи данных из БД в JSON-файл
 def load(connection):
-    global atr_list
-
     cursor = connection.cursor()
     # Получаем результат по отправленному SQL-запросу
     cursor.execute("select * from directory;")
@@ -48,6 +48,7 @@ def load(connection):
             if col is not None:
                 data[len(data)-1].update({atr_list[k]: col})
             k += 1
+    connection.close()
     # Запись из data в JSON-файл
     with open("local_db.json", "w") as write_file:
         json.dump(data, write_file)
@@ -55,24 +56,13 @@ def load(connection):
     # Удаляем ненужные атрибуты из списка
     atr_list.remove('id')
     atr_list.remove('diagnose')
-    connection.close()
+    with open("attributes.json", "w") as write_file:
+        json.dump(atr_list, write_file)
+        write_file.close()
 
 
-# Функция записи атрибута в список атрибутов сравнения
-def remember():
-    widget = ""
-    attribute = ""
-    # Если есть выбранный ранее атрибут
-    if len(last_selected) > 0:
-        widget = last_selected['widget']
-        attribute = last_selected['atr']
-        # Запомнить значение атрибута из его виджета
-        if widget == 'spinbox':
-            check.update({attribute: int(spin1.get())})
-        elif widget == 'option':
-            check.update({attribute: s1.get()})
-        elif widget == 'checkbutton':
-            check.update({attribute: cbv.get()})
+# Функция обновления списка выбранных атрибутов
+def outputbox_refresh():
     # Очистить список выбранных атрибутов перед записью
     outputbox.delete(0, outputbox.size()-1)
     for atr in check:
@@ -81,7 +71,36 @@ def remember():
             outputbox.insert(END, translations[atr]+' - '+str(check[atr]))
         else:
             outputbox.insert(END, atr+' - '+str(check[atr]))
-    print(check)
+
+
+# Функция записи атрибута в список атрибутов сравнения
+def remember(event):
+    widget = ""
+    attribute = ""
+    # Если есть выбранный ранее атрибут
+    if len(last_selected) > 0:
+        widget = last_selected['widget']
+        attribute = last_selected['atr']
+        # Запомнить значение атрибута из его виджета
+        if widget == 'spinbox':
+            if spin1.get() != '':
+                check.update({attribute: int(spin1.get())})
+        elif widget == 'option':
+            check.update({attribute: s1.get()})
+        elif widget == 'checkbutton':
+            check.update({attribute: cbv.get()})
+        outputbox_refresh()
+    # print(check)
+
+
+# Функция удаления атрибута из списка атрибутов сравнения
+def forget(event):
+    ocs = outputbox.curselection()
+    if len(ocs) > 0:
+        id = lbox.get(0, END).index(outputbox.get(ocs).split(' -')[0])
+        del check[fields[id]['atr']]
+        outputbox_refresh()
+        # print(check)
 
 
 # Функция выбора атрибута
@@ -111,8 +130,15 @@ def select(event):
             checkbutton.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
+def outputbox_select(event):
+    ocs = outputbox.curselection()
+    if len(ocs) > 0:
+        id = lbox.get(0, END).index(outputbox.get(ocs).split(' -')[0])
+        print(fields[id]['atr'])
+
+
 # Функция анализа
-def weigh(check):
+def weigh():
     weights = {}
     # Считываем в data данные из JSON-файл
     with open("local_db.json", "r") as read_file:
@@ -173,9 +199,11 @@ def main():
         else:
             lbox.insert(END, atr)
     lbox.bind('<<ListboxSelect>>', select)
+    lbox.bind('<Double-1>', remember)
 
     outputbox = Listbox(frame2, width=40, height=window_height)
     outputbox.pack(side=RIGHT, fill="y")
+    outputbox.bind('<Double-1>', forget)
 
     scrollbar = Scrollbar(frame, orient="vertical")
     scrollbar.config(command=lbox.yview)
@@ -192,7 +220,10 @@ def main():
     btn = Button(root, text="Запомнить", command=remember)
     btn.pack()
 
-    btn = Button(root, text="Анализировать", command=lambda: weigh(check))
+    btn = Button(root, text="Удалить", command=forget)
+    btn.pack()
+
+    btn = Button(root, text="Анализировать", command=weigh)
     btn.pack(side=BOTTOM)
 
     cbv = IntVar()
@@ -203,61 +234,10 @@ def main():
 
 
 if __name__ == '__main__':
-    global check, fields, translations
+    global check, fields, translations, atr_list
 
     # Словарь для перевода
-    translations = {
-        'sex': 'Пол',
-        'age': 'Возраст',
-        'tongue': 'Налет на языке',
-        'stomach': 'Живот',
-        'gallbladder_size': 'Желчный пузырь: размер',
-        'gallbladder_form': 'Желчный пузырь: форма',
-        'gallbladder_wall_thickness': 'Желчный пузырь: толщина стенок',
-        'gallbladder_bending': 'Желчный пузырь: изгиб',
-        'gallbladder_uniformity_of_walls':
-        'Желчный пузырь: однородность стенок',
-        'gallbladder_visibility_of_stones': 'Желчный пузырь: видимость камней',
-        'gallbladder_lumen_of_bladder': 'Желчный пузырь: просвет пузыря',
-        'pancreas_cysts': 'Поджелудочная: кисты',
-        'pancreas_contours': 'Поджелудочная: контуры',
-        'pancreas_structure': 'Поджелудочная: структура',
-        'pancreas_thickness_of_head': 'Поджелудочная: толщина головки',
-        'pancreas_length_of_body': 'Поджелудочная: длина тела',
-        'pancreas_echogenicity_of_parenchyma':
-        'Поджелудочная: эхогенность паренхимы',
-        'pancreas_duct_width': 'Поджелудочная: длина хвоста',
-        'FGDS_color': 'ФГДС: цвет',
-        'FGDS_deffects': 'ФГДС: деффекты',
-        'FGDS_walls_mucus': 'ФГДС: стенки, слизь',
-        'FGDS_walls': 'ФГДС: стенки',
-        'FGDS_cardia_closes': 'ФГДС: кардия смыкается',
-        'nausea': 'Тошнота',
-        'pain_upper_abdomen': 'Боли в верхнем отделе живота',
-        'upper_quadrant_pain': 'Боли в правом/левом подреберье',
-        'vomiting': 'Рвота',
-        'abdominal_distention': 'Вздутие живота',
-        'pain_on_palpation': 'Боль при пальпации',
-        'participation_of_breathing': 'Участие живота в акте дыхания',
-        'eructation': 'Отрыжка',
-        'heartburn': 'Изжога',
-        'weight_loss': 'Снижение массы тела',
-        'SOE': 'СОЭ',
-        'amylase': 'Амилаза',
-        'pancreatic_amylase': 'Панкреатическая амилаза',
-        'lipase': 'Липаза',
-        'trypsin': 'Трипсин',
-        'direct_bilirubin': 'Билирубин прямой',
-        'total_bilirubin': 'Билирубин общий',
-        'alkaline_phosphatase': 'Щелочная фосфатаза',
-        'erythrocytes': 'Эритроциты',
-        'hemoglobin': 'Гемоглобин',
-        'hematocrit': 'Гематокрит',
-        'lymphocytes': 'Лимфациты',
-        'neutrophils': 'Нейтрофилы',
-        'platelets': 'Тромбоциты',
-        'leukocytes': 'Лейкоциты'
-    }
+    translations = translations.get_translation('ru')
     # Список атрибутов и их возможных значений
     fields = []
     # fields = [
@@ -274,13 +254,17 @@ if __name__ == '__main__':
     # ]
     # Словарь атрибутов сравнения
     check = {}
+    atr_list = []
 
     connection = connect('62.249.154.246', 'medic', 'medlab', 'diagmed', 33547)
     # Если удалось подключиться
     if connection is not None:
         # Загрузить данные в JSON-файл
         load(connection)
-    # Заполнение fields атрибутами и соответстующими им значениями, виджетами
+    # Заполнение fields атрибутами и соответстующими им значениями и виджетами
+    with open("attributes.json", "r") as read_file:
+        atr_list = json.load(read_file)
+        read_file.close()
     with open("local_db.json", "r") as read_file:
         data = json.load(read_file)
         for atr in atr_list:
