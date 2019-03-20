@@ -74,7 +74,7 @@ def outputbox_refresh():
 
 
 # Функция записи атрибута в список атрибутов сравнения
-def remember(event):
+def remember():
     widget = ""
     attribute = ""
     # Если есть выбранный ранее атрибут
@@ -90,17 +90,15 @@ def remember(event):
         elif widget == 'checkbutton':
             check.update({attribute: cbv.get()})
         outputbox_refresh()
-    # print(check)
 
 
 # Функция удаления атрибута из списка атрибутов сравнения
-def forget(event):
+def forget():
     ocs = outputbox.curselection()
     if len(ocs) > 0:
         id = lbox.get(0, END).index(outputbox.get(ocs).split(' -')[0])
         del check[fields[id]['atr']]
         outputbox_refresh()
-        # print(check)
 
 
 # Функция выбора атрибута
@@ -130,13 +128,6 @@ def select(event):
             checkbutton.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 
-def outputbox_select(event):
-    ocs = outputbox.curselection()
-    if len(ocs) > 0:
-        id = lbox.get(0, END).index(outputbox.get(ocs).split(' -')[0])
-        print(fields[id]['atr'])
-
-
 # Функция анализа
 def weigh():
     weights = {}
@@ -149,7 +140,6 @@ def weigh():
         k = 0
         for attribute in check:
             if history.get(attribute) is not None:
-                print(check[attribute], history[attribute])
                 if check[attribute] == history[attribute]:
                     k += 1
         hd = history['diagnose']
@@ -164,12 +154,11 @@ def weigh():
     popup = Toplevel()
     popup.title("Результат")
     text = ""
-    for weight in weights:
-        if weights[weight][0] or weights[weight][1]:
-            if weights[weight][0] >= 3:
-                text += weight+' '+str(weights[weight][0])+' ' + \
-                    str(weights[weight][1])+'\n'
-                print(weight, weights[weight][0], weights[weight][1])
+    weights = sorted(weights.items(), key=lambda item: item[1])
+    for weight in reversed(weights):
+        if weight[1][0] >= 3:
+            text += '\n'+weight[0]+'\n\tMax: '+str(weight[1][0])+' | Min: ' + \
+                str(weight[1][1])+'\n'
     msg = Message(popup, text=text, width=window_width)
     msg.pack()
 
@@ -179,8 +168,9 @@ def main():
     global lbox, outputbox, spin1, option1, s1, window_width, window_height, \
         cbv, checkbutton, root
 
-    window_width = 640
-    window_height = 480
+    window_width = 800
+    window_height = 600
+    listbox_width = 45
 
     root = Tk()
     root.title('Мед-Анализатор 3000')
@@ -191,7 +181,7 @@ def main():
     frame.pack(side=LEFT)
     frame2.pack(side=RIGHT)
 
-    lbox = Listbox(frame, width=40, height=window_height)
+    lbox = Listbox(frame, width=listbox_width, height=window_height)
     lbox.pack(side=LEFT, fill="y")
     for atr in atr_list:
         if translations.get(atr) is not None:
@@ -199,11 +189,11 @@ def main():
         else:
             lbox.insert(END, atr)
     lbox.bind('<<ListboxSelect>>', select)
-    lbox.bind('<Double-1>', remember)
+    lbox.bind('<Double-1>', lambda event: remember())
 
-    outputbox = Listbox(frame2, width=40, height=window_height)
+    outputbox = Listbox(frame2, width=listbox_width, height=window_height)
     outputbox.pack(side=RIGHT, fill="y")
-    outputbox.bind('<Double-1>', forget)
+    outputbox.bind('<Double-1>', lambda event: forget())
 
     scrollbar = Scrollbar(frame, orient="vertical")
     scrollbar.config(command=lbox.yview)
