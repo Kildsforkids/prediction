@@ -156,8 +156,8 @@ def weigh():
     text = ""
     weights = sorted(weights.items(), key=lambda item: item[1])
     for weight in reversed(weights):
-        if weight[1][0] >= 3:
-            text += '\n'+weight[0]+'\n\tMax: '+str(weight[1][0])+' | Min: ' + \
+        if weight[1][0] >= 3 and weight[1][1] >= 3:
+            text += '\n'+weight[0]+'\n\tMax: '+str(weight[1][0])+' | People: ' + \
                 str(weight[1][1])+'\n'
     msg = Message(popup, text=text, width=window_width)
     msg.pack()
