@@ -4,6 +4,7 @@ import json
 import mysql.connector
 from mysql.connector import errorcode
 import translations
+import pandas as pd
 
 # !!!ОСТОРОЖНО!!! ДАЛЬШЕ ИДУТ КОСТЫЛИ |
 #                                     V
@@ -338,23 +339,39 @@ def weigh():
                         k += 1
         hd = history['diagnose']
         if hd not in weights:
-            weights.update({hd: [0, 0]})
+            weights.update({hd: [0, 0, []]})
         w = weights[hd]
         if k > 0:
             w[1] += 1
         w[0] = k if k > w[0] else w[0]
-        weights.update({hd: [w[0], w[1]]})
+        w[2].append(history)
+        weights.update({hd: [w[0], w[1], w[2]]})
     # Вывод результатов в отдельном окне
     text = ""
+    dfs = []
     weights = sorted(weights.items(), key=lambda item: item[1])
     for weight in reversed(weights):
         if weight[1][0] >= weight_min_value and \
            weight[1][1] >= weight_min_value:
+            for dictionary in weight[1][2]:
+                # print(pd.DataFrame(dictionary, index=[0]))
+                df = pd.DataFrame(dictionary, index=[0])
+                dfs.append(df)
+            # ds.append(weight[1][2])
+            # print(weight[1][2][0].keys())
+                # df = pd.DataFrame(dictionary, index=[0])
+                # df.to_csv("test.csv", sep='\t')
             text += '\n'+weight[0]+'\n\tМаксимум совпадений: '+str(weight[1][0])+'\nЛюдей с похожими признаками: ' + \
                 str(weight[1][1])+'\n'
     if text == "":
         text = "Мало критериев!"
     show_msg("Результат", text)
+    df2 = pd.concat(dfs)
+    df0 = dfs[0].to_dict()
+    cols = list(df0.keys())
+    df2 = df2[cols]
+
+    df2.to_csv("test.csv", sep='\t', encoding='cp1251')
 
 
 # Функция создания интерфейса
