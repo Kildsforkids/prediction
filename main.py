@@ -5,7 +5,10 @@ import mysql.connector
 from mysql.connector import errorcode
 import translations
 
-
+# !!!ОСТОРОЖНО!!! ДАЛЬШЕ ИДУТ КОСТЫЛИ |
+#                                     V
+count = 0
+window_count = 0
 # Функция соединения с БД
 def connect(host, user, password, database, port):
     connection = None
@@ -203,15 +206,17 @@ def remember():
             # Запомнить значение атрибута из его виджета
             if widget == 'spinbox':
                 string = spin.get()
-                if string.isdigit() and len(string) <= 3:
+                # Ограничить ввод целого числа до 200
+                if string.isdigit() and int(string) <= 200:
                     check.update({attribute: int(string)})
                     last_selected['values'].clear()
                     last_selected['values'].append(string)
             elif widget == 'option':
                 check.update({attribute: option_value.get()})
             elif widget == 'checkbutton':
+                # Конвертация 1 и 0 в 'да' и 'нет'
                 check.update({
-                    attribute: 'есть' if checkbutton_value.get() else 'нет'
+                    attribute: 'да' if checkbutton_value.get() else 'нет'
                 })
                 last_selected['values'].clear()
                 last_selected['values'].append(checkbutton_value.get())
@@ -248,17 +253,19 @@ def forget_all():
     outputbox_refresh()
 
 
+# Функция создания выпадающего списка (OptionMenu)
+def create_optionmenu():
+    global option, option_value
+
+    option_value = StringVar(value=last_selected['values'][0])
+    option = OptionMenu(root, option_value, *last_selected['values'])
+    option.place(relx=0.5, rely=0.5, anchor='center')
+
+
 # Функция создания виджета для выбранного атрибута
 def create_widget():
     if last_selected['widget'] == 'option':
-        option.children['menu'].delete(0, 'end')
-        for value in last_selected['values']:
-            option.children['menu'].add_command(
-                label=value,
-                command=lambda: option_value.set(value)
-            )
-        option_value.set(last_selected['values'][0])
-        option.place(relx=0.5, rely=0.5, anchor='center')
+        create_optionmenu()
     elif last_selected['widget'] == 'spinbox' or \
             last_selected['widget'] == 'spinbox_float':
         if len(last_selected['values']) > 0:
@@ -276,23 +283,37 @@ def create_widget():
 
 # Функция вывода всплывающих сообщений
 def show_msg(title, text):
+    global popup, window_count
+
+    if window_count > 0: close_window()
     popup = Toplevel()
     popup.title(title)
-    msg = Message(popup, text=text, width=window_width)
+    # popup.maxsize(350, 400)
+    # popup.minsize(350, 400)
+    popup.protocol("WM_DELETE_WINDOW", close_window)
+    msg = Message(popup, text=text)
     msg.pack()
+    window_count += 1
+
+
+def close_window():
+    popup.destroy()
 
 
 # Функция выбора атрибута
 def select(event):
-    global last_selected
+    global last_selected, count
     # Если есть текущий выбранный атрибут
     if len(lbox.curselection()) > 0:
         # Записать атрибут как ранее выбранный
         last_selected = fields[lbox.curselection()[0]]
         # Очистить место от предыдущих виджетов
         spin.place_forget()
-        option.place_forget()
+        if count > 0:
+            option.place_forget()
         checkbutton.place_forget()
+        if last_selected['widget'] == 'option':
+            count += 1
         # Установить виджет для соответствующего атрибута
         create_widget()
 
@@ -309,7 +330,7 @@ def weigh():
             if history.get(attribute) is not None:
                 if check[attribute] == history[attribute]:
                     k += 1
-                elif check[attribute] == 'есть':
+                elif check[attribute] == 'да':
                     if history[attribute] == 1:
                         k += 1
                 elif check[attribute] == 'нет':
@@ -329,7 +350,7 @@ def weigh():
     for weight in reversed(weights):
         if weight[1][0] >= weight_min_value and \
            weight[1][1] >= weight_min_value:
-            text += '\n'+weight[0]+'\n\tMax: '+str(weight[1][0])+' | People: ' + \
+            text += '\n'+weight[0]+'\n\tМаксимум совпадений: '+str(weight[1][0])+'\nЛюдей с похожими признаками: ' + \
                 str(weight[1][1])+'\n'
     if text == "":
         text = "Мало критериев!"
@@ -338,7 +359,7 @@ def weigh():
 
 # Функция создания интерфейса
 def main():
-    global lbox, outputbox, spin, spin_value, option, option_value, window_width, window_height, \
+    global lbox, outputbox, spin, spin_value, window_width, window_height, \
         checkbutton_value, checkbutton, root, weigh_btn
 
     window_width = 800
@@ -351,6 +372,7 @@ def main():
     root.minsize(window_width, window_height)
     root.maxsize(window_width, window_height)
     root.bind('<Return>', lambda event: remember())
+    # root.protocol("WM_DELETE_WINDOW", close_window)
 
     frame = Frame(root)
     frame2 = Frame(root)
@@ -379,8 +401,8 @@ def main():
     scrollbar2.config(command=outputbox.yview)
     scrollbar2.pack(side='left', fill="y")
 
-    option_value = StringVar(value=fields[0]['values'][0])
-    option = OptionMenu(root, option_value, *fields[0]['values'])
+    # option_value = StringVar(value=fields[0]['values'][0])
+    # option = OptionMenu(root, option_value, *fields[0]['values'])
     spin_value = StringVar(value='0')
     spin = Spinbox(root, from_=0, to=200, textvariable=spin_value, width=5,
                    format="%.2f")
