@@ -289,8 +289,6 @@ def show_msg(title, text):
     if window_count > 0: close_window()
     popup = Toplevel()
     popup.title(title)
-    # popup.maxsize(350, 400)
-    # popup.minsize(350, 400)
     popup.protocol("WM_DELETE_WINDOW", close_window)
     msg = Message(popup, text=text)
     msg.pack()
@@ -321,7 +319,6 @@ def select(event):
 
 # Функция анализа
 def weigh():
-    # weight_min_value = 5
     weights = {}
     # Считываем в data данные из JSON-файл
     data = json_read("local_db.json")
@@ -329,7 +326,10 @@ def weigh():
         k = 0
         for attribute in check:
             if history.get(attribute) is not None:
-                if check[attribute] == history[attribute]:
+				if type(check[attribute]) is float:
+					if  check[attribute] >= history[attribute]-5 and check[attribute] <= history[attribute]+5:
+				        k += 1
+                elif check[attribute] == history[attribute]:
                     k += 1
                 elif check[attribute] == 'да':
                     if history[attribute] == 1:
@@ -354,13 +354,8 @@ def weigh():
         if weight[1][0] >= weight_min_value and \
            weight[1][1] >= weight_min_value:
             for dictionary in weight[1][2]:
-                # print(pd.DataFrame(dictionary, index=[0]))
                 df = pd.DataFrame(dictionary, index=[0])
                 dfs.append(df)
-            # ds.append(weight[1][2])
-            # print(weight[1][2][0].keys())
-                # df = pd.DataFrame(dictionary, index=[0])
-                # df.to_csv("test.csv", sep='\t')
             text += '\n'+weight[0]+'\n\tМаксимум совпадений: '+str(weight[1][0])+'\nЛюдей с похожими признаками: ' + \
                 str(weight[1][1])+'\n'
     if text == "":
@@ -418,8 +413,6 @@ def main():
     scrollbar2.config(command=outputbox.yview)
     scrollbar2.pack(side='left', fill="y")
 
-    # option_value = StringVar(value=fields[0]['values'][0])
-    # option = OptionMenu(root, option_value, *fields[0]['values'])
     spin_value = StringVar(value='0')
     spin = Spinbox(root, from_=0, to=200, textvariable=spin_value, width=5,
                    format="%.2f")
